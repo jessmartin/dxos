@@ -92,6 +92,7 @@
     "@dxos/shell": "workspace:*",
     "@dxos/storybook-utils": "workspace:*",
     "@phosphor-icons/react": "^2.1.5",
+    "@preact/signals-core": "^1.6.0",
     "@sentry/vite-plugin": "^2.14.0",
     "@socketsupply/socket": "^0.5.4",
     "@types/react": "^18.0.21",

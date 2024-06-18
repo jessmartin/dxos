@@ -63,6 +63,7 @@ import { meta as BetaMeta } from './beta/BetaPlugin';
 import { ResetDialog } from './components';
 import { setupConfig } from './config';
 import { appKey, INITIAL_CONTENT, INITIAL_TITLE } from './constants';
+import { meta as ContactMeta } from './contacts/ContactsPlugin';
 import { steps } from './help';
 import { FolderType, SectionType, StackType } from './migrations';
 import translations from './translations';
@@ -133,6 +134,7 @@ const main = async () => {
       // TODO(wittjosiah): Consider what happens to PWA updates when hitting error boundary.
       isSocket ? NativeMeta : PwaMeta,
       BetaMeta,
+      ContactMeta,
 
       // UX
       isDeck ? DeckMeta : LayoutMeta,
@@ -182,6 +184,7 @@ const main = async () => {
     ],
     plugins: {
       [BetaMeta.id]: Plugin.lazy(() => import('./beta/BetaPlugin')),
+      [ContactMeta.id]: Plugin.lazy(() => import('./contacts/ContactsPlugin')),
       [ChainMeta.id]: Plugin.lazy(() => import('@braneframe/plugin-chain')),
       [ChessMeta.id]: Plugin.lazy(() => import('@braneframe/plugin-chess')),
       [ClientMeta.id]: Plugin.lazy(() => import('@braneframe/plugin-client'), {
