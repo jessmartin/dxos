@@ -2,13 +2,7 @@
 // Copyright 2023 DXOS.org
 //
 
-export {
-  defaultKey,
-  type Echo,
-  type Space,
-  type PropertiesType,
-  type PropertiesTypeProps,
-} from '@dxos/client-protocol';
+export { type Echo, type Space, type PropertiesType, type PropertiesTypeProps } from '@dxos/client-protocol';
 export {
   create,
   getMeta,
@@ -26,7 +20,6 @@ export {
   createSubscription,
   fromCursor,
   getRangeFromCursor,
-  getTypeRef,
   getObjectCore,
   getTextInRange,
   hasType,
@@ -46,6 +39,9 @@ export {
   type SubscriptionHandle,
   type Hypergraph,
 } from '@dxos/echo-db';
+
+// TODO(dmaretskyi): Remove this export.
+export { decodeReference as internalDecodeReference } from '@dxos/echo-protocol';
 
 export { IndexKind } from '@dxos/protocols/proto/dxos/echo/indexing';
 export { QueryOptions } from '@dxos/protocols/proto/dxos/echo/filter';

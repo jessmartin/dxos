@@ -30,6 +30,7 @@ import {
   type UpdateSpaceRequest,
   type WriteCredentialsRequest,
   type UpdateMemberRoleRequest,
+  type CreateEpochResponse,
 } from '@dxos/protocols/proto/dxos/client/services';
 import { type Credential } from '@dxos/protocols/proto/dxos/halo/credentials';
 import { type GossipMessage } from '@dxos/protocols/proto/dxos/mesh/teleport/gossip';
@@ -125,8 +126,18 @@ export class SpacesServiceImpl implements SpacesService {
           subscriptions.clear();
 
           for (const space of dataSpaceManager.spaces.values()) {
-            // TODO(dmaretskyi): This can skip updates and not report intermediate states. Potential race condition here.
-            subscriptions.add(space.stateUpdate.on(ctx, () => scheduler.forceTrigger()));
+            let lastState: SpaceState | undefined;
+            subscriptions.add(
+              space.stateUpdate.on(ctx, () => {
+                // Always send a separate update if the space state has changed.
+                if (space.state !== lastState) {
+                  scheduler.forceTrigger();
+                } else {
+                  scheduler.trigger();
+                }
+                lastState = space.state;
+              }),
+            );
 
             subscriptions.add(space.presence.updated.on(ctx, () => scheduler.trigger()));
             subscriptions.add(space.automergeSpaceState.onNewEpoch.on(ctx, () => scheduler.trigger()));
@@ -208,10 +219,11 @@ export class SpacesServiceImpl implements SpacesService {
     }
   }
 
-  async createEpoch({ spaceKey, migration, automergeRootUrl }: CreateEpochRequest) {
+  async createEpoch({ spaceKey, migration, automergeRootUrl }: CreateEpochRequest): Promise<CreateEpochResponse> {
     const dataSpaceManager = await this._getDataSpaceManager();
     const space = dataSpaceManager.spaces.get(spaceKey) ?? raise(new SpaceNotFoundError(spaceKey));
-    await space.createEpoch({ migration, newAutomergeRoot: automergeRootUrl });
+    const credential = await space.createEpoch({ migration, newAutomergeRoot: automergeRootUrl });
+    return { epochCredential: credential ?? undefined };
   }
 
   private _serializeSpace(space: DataSpace): Space {
