@@ -54,7 +54,7 @@ const SketchComponent: FC<SketchComponentProps> = ({
   useEffect(() => {
     if (editor) {
       editor.user.updateUserPreferences({
-        isDarkMode: themeMode === 'dark',
+        // isDarkMode: themeMode === 'dark',
         isSnapMode: true,
       });
       editor.updateInstanceState({
