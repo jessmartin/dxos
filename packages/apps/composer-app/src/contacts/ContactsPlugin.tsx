@@ -122,8 +122,10 @@ const ContactsPlugin = (): PluginDefinition<ContactProvides> => {
                           id: fullyQualifiedId(object),
                           data: object,
                           properties: {
-                            // TODO(wittjosiah): Reconcile with metadata provides.
-                            label: object.firstName || object.lastName || 'New Contact',
+                            label:
+                              object.firstName && object.lastName
+                                ? object.firstName + ' ' + object.lastName
+                                : 'New Contact',
                             icon: (props: IconProps) => <Person {...props} />,
                             testId: 'spacePlugin.object',
                             persistenceClass: 'echo',
@@ -187,12 +189,21 @@ const ContactsPlugin = (): PluginDefinition<ContactProvides> => {
   };
 };
 
-export default ContactsPlugin;
+/** Utility functions *************************************************************/
+
+const contactIsEmpty = (contact: ContactType | null) => {
+  if (!contact) {
+    return true;
+  }
+  return !contact.firstName && !contact.lastName && !contact.email && !contact.phone && !contact.website;
+};
+
+/** Surface components *************************************************************/
 
 const ContactSection: FC<{ contact: ContactType }> = ({ contact }) => {
   return (
     <div className='max-bs-96 mlb-2 is-full sticky-top-0'>
-      <ContactComponent contact={contact} />
+      <ContactComponent contact={contact} surfaceContext='section' />
     </div>
   );
 };
@@ -200,7 +211,7 @@ const ContactSection: FC<{ contact: ContactType }> = ({ contact }) => {
 const ContactMain: FC<{ contact: ContactType }> = ({ contact }) => {
   return (
     <Main.Content classNames={[baseSurface, fixedInsetFlexLayout, topbarBlockPaddingStart, bottombarBlockPaddingEnd]}>
-      <ContactComponent contact={contact} />
+      <ContactComponent contact={contact} surfaceContext='main' />
     </Main.Content>
   );
 };
@@ -208,17 +219,25 @@ const ContactMain: FC<{ contact: ContactType }> = ({ contact }) => {
 const ContactArticle: FC<{ contact: ContactType }> = ({ contact }) => {
   return (
     <div role='none' className='row-span-2 overflow-auto'>
-      <ContactComponent contact={contact} />
+      <ContactComponent contact={contact} surfaceContext='article' />
     </div>
   );
 };
 
-const ContactComponent: FC<{ contact: ContactType }> = ({ contact }) => {
-  const [editMode, setEditMode] = useState(false);
+const ContactComponent: FC<{ contact: ContactType; surfaceContext: string }> = ({ contact, surfaceContext }) => {
+  const [editMode, setEditModeForSure] = useState(false);
   const [formState, setFormState] = useState<ContactType>(
     // Hack to make a deep copy of the contact object and eject from the reactive proxy.
     JSON.parse(JSON.stringify(contact)),
   );
+
+  const editable = surfaceContext === 'main' || surfaceContext === 'article';
+
+  const setEditMode = (shouldEdit: boolean) => {
+    if (editable) {
+      setEditModeForSure(shouldEdit);
+    }
+  };
 
   useEffect(() => {
     setFormState(JSON.parse(JSON.stringify(contact)));
@@ -233,13 +252,6 @@ const ContactComponent: FC<{ contact: ContactType }> = ({ contact }) => {
     }
   }, [contact, setEditMode]);
 
-  const contactIsEmpty = (contact: ContactType | null) => {
-    if (!contact) {
-      return true;
-    }
-    return !contact.firstName && !contact.lastName && !contact.email && !contact.phone && !contact.website;
-  };
-
   const updateContactField = useCallback(
     (field: string, newValue: any) => {
       // Mutate the reactive echo object
@@ -251,46 +263,63 @@ const ContactComponent: FC<{ contact: ContactType }> = ({ contact }) => {
   );
 
   return (
-    <div>
-      <button
-        onClick={() => {
-          setEditMode(!editMode);
-        }}
-        className='relative float-right m-4 rounded bg-blue-500 px-2 py-1 text-white text-sm font-bold'
-      >
-        {editMode ? 'Done' : 'Edit'}
-      </button>
-      {editMode ? (
-        <div className='mb-4 text-center text-2xl font-bold'>
-          <input
-            ref={firstNameInputRef}
-            type='text'
-            value={formState?.firstName}
-            onChange={(e) => setFormState((state) => ({ ...state, firstName: e.target.value }))}
-            onBlur={(e) => updateContactField('firstName', e.target.value)}
-            className='rounded border px-2 py-1 text-2xl font-bold text-center'
-            style={{
-              width: `${formState?.firstName ? formState?.firstName.length + 1 : 0}ch`,
+    <div className='@container'>
+      <div className='justify-center items-center mb-4 @[278px]:flex hidden'>
+        {editMode ? (
+          <div className='text-center text-2xl font-bold'>
+            <input
+              ref={firstNameInputRef}
+              type='text'
+              value={formState?.firstName}
+              onChange={(e) => setFormState((state) => ({ ...state, firstName: e.target.value }))}
+              onBlur={(e) => updateContactField('firstName', e.target.value)}
+              className='rounded border px-2 py-1 text-2xl font-bold text-center'
+              style={{
+                width: `${formState?.firstName ? formState?.firstName.length + 1 : 0}ch`,
+              }}
+            />
+            <input
+              type='text'
+              value={formState?.lastName}
+              onChange={(e) => setFormState((state) => ({ ...state, lastName: e.target.value }))}
+              onBlur={(e) => updateContactField('lastName', e.target.value)}
+              className='rounded border px-2 py-1 text-2xl font-bold text-center'
+              style={{
+                width: `${formState?.lastName ? formState.lastName.length + 1 : 0}ch`,
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            className='px-2 py-1 text-center text-2xl font-bold  dark:text-gray-200'
+            onClick={() => setEditMode(true)}
+          >
+            {formState?.firstName && formState.firstName.length > 0 ? formState.firstName : '\u00A0'}{' '}
+            {formState?.lastName && formState.lastName.length > 0 ? formState.lastName : '\u00A0'}
+          </div>
+        )}
+        {editable && (
+          <button
+            onClick={() => {
+              setEditMode(!editMode);
             }}
-          />
-          <input
-            type='text'
-            value={formState?.lastName}
-            onChange={(e) => setFormState((state) => ({ ...state, lastName: e.target.value }))}
-            onBlur={(e) => updateContactField('lastName', e.target.value)}
-            className='rounded border px-2 py-1 text-2xl font-bold text-center'
-            style={{
-              width: `${formState?.lastName ? formState.lastName.length + 1 : 0}ch`,
-            }}
-          />
+            className='mx-4 rounded bg-blue-500 px-2 py-1 text-white text-sm font-bold'
+          >
+            {editMode ? 'Done' : 'Edit'}
+          </button>
+        )}
+      </div>
+      <div className='justify-center items-center mb-4 @[278px]:hidden flex flex-col'>
+        <div className='w-24 h-24 mb-2 bg-gray-300 rounded-full flex items-center justify-center text-4xl'>
+          {formState?.firstName[0]}
+          {formState?.lastName[0]}
         </div>
-      ) : (
-        <div className='mb-4 px-2 py-1 text-center text-2xl font-bold  dark:text-gray-200'>
+        <div className='flex-col items-center justify-center px-2 py-1 text-center text-3xl font-bold  dark:text-gray-200'>
           {formState?.firstName && formState.firstName.length > 0 ? formState.firstName : '\u00A0'}{' '}
           {formState?.lastName && formState.lastName.length > 0 ? formState.lastName : '\u00A0'}
         </div>
-      )}
-      <div className='flex flex-col'>
+      </div>
+      <div className='@[278px]:flex hidden flex-col'>
         {['email', 'phone', 'website'].map((field) => {
           return (
             <div key={field} className='mb-2 flex items-center rounded bg-gray-100 p-2 dark:bg-gray-700'>
@@ -310,7 +339,9 @@ const ContactComponent: FC<{ contact: ContactType }> = ({ contact }) => {
                   />
                 </div>
               ) : (
-                <div className='px-2 py-1'>{formState[field] ?? '\u00A0'}</div>
+                <div onClick={() => setEditMode(true)} className='px-2 py-1'>
+                  {formState[field] ?? '\u00A0'}
+                </div>
               )}
             </div>
           );
@@ -319,3 +350,5 @@ const ContactComponent: FC<{ contact: ContactType }> = ({ contact }) => {
     </div>
   );
 };
+
+export default ContactsPlugin;

@@ -2,6 +2,7 @@
 // Copyright 2022 DXOS.org
 //
 
+import tailwindCssContainerQueries from '@tailwindcss/container-queries';
 import tailwindcssForms from '@tailwindcss/forms';
 import merge from 'lodash.merge';
 import tailwindColors from 'tailwindcss/colors';
@@ -180,7 +181,13 @@ export const tailwindConfig = ({
       ...extensions,
     ),
   },
-  plugins: [semanticColorsPlugin, tailwindcssLogical, tailwindcssForms, tailwindcssRadix()],
+  plugins: [
+    semanticColorsPlugin,
+    tailwindcssLogical,
+    tailwindcssForms,
+    tailwindCssContainerQueries,
+    tailwindcssRadix(),
+  ],
   ...(env === 'development' && { mode: 'jit' }),
   content,
   future: {
